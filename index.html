@@ -2,56 +2,68 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Super preguntas rapidas Bíblicas</title>
+<title>Concurso Bíblico</title>
 
 <style>
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+  background: radial-gradient(circle, #0f2027, #203a43, #2c5364);
   color: white;
+  overflow: hidden;
 }
 
+/* CONTENEDOR */
 .container {
-  background: #0f172a;
-  padding: 40px;
-  border-radius: 20px;
-  width: 600px;
   text-align: center;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
+/* TITULO */
 h1 {
-  font-size: 32px;
+  font-size: 50px;
+  margin-bottom: 10px;
 }
 
-.progress {
-  margin-bottom: 20px;
-  font-size: 18px;
-  opacity: 0.9;
+/* SCORE */
+.scoreboard {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 22px;
+  background: rgba(0,0,0,0.5);
+  padding: 10px 20px;
+  border-radius: 10px;
 }
 
+/* PREGUNTA */
 .question {
-  font-size: 26px;
-  margin-bottom: 30px;
-  min-height: 80px;
-  line-height: 1.3;
+  font-size: 40px;
+  margin: 40px;
+  min-height: 120px;
+}
+
+/* OPCIONES */
+.options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 70%;
+  margin: auto;
 }
 
 .option {
-  display: block;
-  background: #f1f5f9;
-  color: black;
-  margin: 15px 0;
-  padding: 18px;
-  border-radius: 14px;
+  padding: 25px;
+  font-size: 22px;
+  border-radius: 15px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 18px;
+  background: #ffffff;
+  color: black;
+  transition: 0.3s;
   font-weight: bold;
 }
 
@@ -59,46 +71,84 @@ h1 {
   transform: scale(1.05);
 }
 
+/* EFECTOS */
 .correct {
   background: #00e676 !important;
-  color: black;
+  animation: pulse 0.5s infinite alternate;
 }
 
 .wrong {
-  background: #ff5252 !important;
+  background: #ff1744 !important;
   color: white;
 }
 
-button {
-  margin-top: 25px;
-  padding: 14px 30px;
-  border: none;
-  border-radius: 12px;
-  background: #ffcc00;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 18px;
+@keyframes pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
 }
 
-button:hover {
-  transform: scale(1.1);
+/* BOTONES */
+button {
+  margin-top: 30px;
+  padding: 15px 40px;
+  font-size: 20px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  background: gold;
+  font-weight: bold;
+}
+
+/* PANTALLAS */
+.screen {
+  display: none;
+}
+
+.active {
+  display: block;
+}
+
+/* RESULTADO */
+.result {
+  font-size: 40px;
 }
 </style>
 
 </head>
 <body>
 
-<div class="container">
-  <h1>Super preguntas rapidas Bíblicas</h1>
-  <div class="progress" id="progress"></div>
+<div class="scoreboard">
+  Puntos: <span id="score">0</span>
+</div>
 
-  <div id="quiz">
+<div class="container">
+
+  <!-- INICIO -->
+  <div id="start" class="screen active">
+    <h1>Concurso Bíblico</h1>
+    <p>Sube tu archivo de preguntas</p>
+    <input type="file" id="fileInput">
+
+    <br><br>
+
+    <button onclick="downloadExample()">Descargar ejemplo</button>
+    <button onclick="startGame()">Comenzar</button>
+  </div>
+
+  <!-- JUEGO -->
+  <div id="game" class="screen">
     <div class="question" id="question"></div>
-    <div id="options"></div>
+    <div class="options" id="options"></div>
     <button id="nextBtn" style="display:none;">Siguiente</button>
   </div>
 
-  <div id="result" style="display:none;"></div>
+  <!-- RESULTADO -->
+  <div id="end" class="screen">
+    <h1>Resultado Final</h1>
+    <div class="result" id="finalScore"></div>
+    <button onclick="location.reload()">Reiniciar</button>
+  </div>
+
 </div>
 
 <!-- SONIDOS -->
@@ -106,109 +156,104 @@ button:hover {
 <audio id="wrongSound" src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3"></audio>
 
 <script>
-const questions = [
-  {
-    question: "¿Qué libros están antes y después de Juan?",
-    options: ["Lucas y Hechos", "Lucas y Mateo", "Mateo y Marcos", "Hechos y Romanos"],
-    answer: 0
-  },
-  {
-    question: "¿A qué categoría pertenece el libro de Juan?",
-    options: ["Evangelios", "Cartas de leyes", "Cánticos", "Profetas"],
-    answer: 0
-  },
-  {
-    question: "¿Qué libros están antes y después de Salmos?",
-    options: ["Proverbios y Eclesiastés", "Proverbios y Cantares", "Job y Proverbios", "Job y Eclesiastés"],
-    answer: 3
-  },
-  {
-    question: "¿A qué categoría pertenece el libro de Miqueas?",
-    options: ["Profetas Menores", "Profetas Mayores", "Evangelios", "Libros Poéticos"],
-    answer: 1
-  },
-  {
-    question: "¿Qué libros están antes y después de Gálatas?",
-    options: ["1 Corintios y Efesios", "2 Corintios y Efesios", "1 Corintios y 2 Corintios", "Job y Eclesiastés"],
-    answer: 2
-  },
-  {
-    question: "¿A qué categoría pertenece el libro de Deuteronomio?",
-    options: ["Profetas Menores", "Profetas Mayores", "Libros de la Ley", "Libros Poéticos"],
-    answer: 3
-  },
-  {
-    question: "¿Qué libros están antes y después de Santiago?",
-    options: ["1 Pedro y 1 Juan", "Filemón y 1 Pedro", "1 Pedro y 2 Pedro", "Hebreos y 1 Pedro"],
-    answer: 4
-  },
-  {
-    question: "¿A que categoría pertenece el libro de Ezequiel?",
-    options: ["Profetas Menores", "Profetas Mayores", "Libros de la Ley", "Libros Poéticos"],
-    answer: 2
-  }
-];
-
-let currentQuestion = 0;
+let questions = [];
+let current = 0;
 let score = 0;
-let answeredCorrectly = false;
+let answered = false;
 
-const questionEl = document.getElementById("question");
-const optionsEl = document.getElementById("options");
-const nextBtn = document.getElementById("nextBtn");
-const resultEl = document.getElementById("result");
-const progressEl = document.getElementById("progress");
-
+const scoreEl = document.getElementById("score");
 const correctSound = document.getElementById("correctSound");
 const wrongSound = document.getElementById("wrongSound");
 
+function downloadExample() {
+  const content = `Pregunta|Opcion1|Opcion2|Opcion3|Opcion4|Respuesta
+¿Quién construyó el arca?|Moisés|Noé|Abraham|David|1
+¿Primer libro de la Biblia?|Éxodo|Génesis|Levítico|Números|1`;
+
+  const blob = new Blob([content], { type: "text/plain" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "preguntas.txt";
+  link.click();
+}
+
+function startGame() {
+  const file = document.getElementById("fileInput").files[0];
+
+  if (!file) {
+    alert("Sube un archivo primero");
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    const lines = e.target.result.split("\n").slice(1);
+
+    questions = lines.map(line => {
+      const parts = line.split("|");
+      return {
+        question: parts[0],
+        options: [parts[1], parts[2], parts[3], parts[4]],
+        answer: parseInt(parts[5])
+      };
+    });
+
+    changeScreen("game");
+    loadQuestion();
+  };
+
+  reader.readAsText(file);
+}
+
+function changeScreen(screen) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(screen).classList.add("active");
+}
+
 function loadQuestion() {
-  answeredCorrectly = false;
-  nextBtn.style.display = "none";
-  optionsEl.innerHTML = "";
+  answered = false;
+  document.getElementById("nextBtn").style.display = "none";
 
-  const q = questions[currentQuestion];
+  const q = questions[current];
+  document.getElementById("question").textContent = q.question;
 
-  progressEl.textContent = `Pregunta ${currentQuestion + 1} de ${questions.length}`;
-  questionEl.textContent = q.question;
+  const optionsDiv = document.getElementById("options");
+  optionsDiv.innerHTML = "";
 
-  q.options.forEach((option, index) => {
+  q.options.forEach((opt, i) => {
     const div = document.createElement("div");
-    div.textContent = option;
+    div.textContent = opt;
     div.classList.add("option");
 
-    div.onclick = () => selectOption(div, index);
+    div.onclick = () => selectOption(div, i);
 
-    optionsEl.appendChild(div);
+    optionsDiv.appendChild(div);
   });
 }
 
-function selectOption(element, index) {
-  if (answeredCorrectly) return;
+function selectOption(el, i) {
+  if (answered) return;
 
-  const correct = questions[currentQuestion].answer;
+  const correct = questions[current].answer;
 
-  if (index === correct) {
-    element.classList.add("correct");
+  if (i === correct) {
+    el.classList.add("correct");
     correctSound.play();
     score++;
-    answeredCorrectly = true;
-    nextBtn.style.display = "block";
-
-    document.querySelectorAll(".option").forEach(opt => {
-      opt.style.pointerEvents = "none";
-    });
-
+    scoreEl.textContent = score;
+    answered = true;
+    document.getElementById("nextBtn").style.display = "block";
   } else {
-    element.classList.add("wrong");
+    el.classList.add("wrong");
     wrongSound.play();
   }
 }
 
-nextBtn.onclick = () => {
-  currentQuestion++;
+document.getElementById("nextBtn").onclick = () => {
+  current++;
 
-  if (currentQuestion < questions.length) {
+  if (current < questions.length) {
     loadQuestion();
   } else {
     showResult();
@@ -216,25 +261,10 @@ nextBtn.onclick = () => {
 };
 
 function showResult() {
-  document.getElementById("quiz").style.display = "none";
-  resultEl.style.display = "block";
-
-  resultEl.innerHTML = `
-    <h2>Resultado final</h2>
-    <p style="font-size:22px;">${score} / ${questions.length}</p>
-    <button onclick="restartQuiz()">Reiniciar</button>
-  `;
+  changeScreen("end");
+  document.getElementById("finalScore").textContent =
+    score + " / " + questions.length;
 }
-
-function restartQuiz() {
-  currentQuestion = 0;
-  score = 0;
-  document.getElementById("quiz").style.display = "block";
-  resultEl.style.display = "none";
-  loadQuestion();
-}
-
-loadQuestion();
 </script>
 
 </body>
